@@ -1,0 +1,10 @@
+*.autosave
+*.stash
+*.log
+*.user*
+Makefile
+*.orig
+*.o
+*CMakeFiles*
+CmakeCache*
+*build*
