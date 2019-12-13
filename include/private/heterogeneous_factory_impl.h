@@ -62,8 +62,8 @@ private:
             using CreatorTraitT = std::function<BasePtrT(Args...)>;
             if constexpr (std::is_constructible_v<T, DefaultCreationArgsT...>)
             {
-                DefaultCreatorTraitT default_trait = [](DefaultCreationArgsT... args) { return std::make_unique<T>(args...); };
-                traitsMap().emplace(name, default_trait);
+                DefaultCreatorTraitT defaultTrait = [](DefaultCreationArgsT... args) { return std::make_unique<T>(args...); };
+                traitsMap().emplace(name, defaultTrait);
             }
             if constexpr (!std::is_same_v<CreatorTraitT, DefaultCreatorTraitT> && std::is_constructible_v<T, Args...>)
             {
