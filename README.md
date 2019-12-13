@@ -9,7 +9,7 @@
 
 ---
 
-<p align="center"> Header only heterogeneous factory pattern with automated static registration
+<p align="left"> Header only heterogeneous factory pattern with automated static registration
     <br>
 </p>
 
@@ -35,11 +35,12 @@ REGISTER_IN_FACTORY_STATIC(ConcreteInterface, InterfaceFactory, int, int)
 auto concrete = InterfaceFactory::create("concrete", 2, 3);
 ```
 
+Please see the [test](https://github.com/farmovit/heterogeneous_factory/blob/master/test/factory_test.cpp) to get more information.
+Also documentations are available in source files.
+
 ### Requirements
 ```
 CMake 3.6
 C++17
 ```
 
-## 🎈 Usage <a name="usage"></a>
-Please see the [test](https://github.com/farmovit/QPointerGrabber/blob/master/test/GrabberTest.cpp) to get how it can be used.
