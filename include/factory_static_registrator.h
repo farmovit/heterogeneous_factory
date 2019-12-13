@@ -17,13 +17,13 @@
  * using InterfaceFactory = HGSFactory<Interface>;
 
  * // ConcreteInterface.h
- * struct ConcreteInterface : public Interface {
- *      ConcreteInterface(int, int) {}
+ * struct Concrete : public Interface {
+ *      Concrete(int, int) {}
  *      static std::string factoryRegistrationName() { return "concrete"; }
  * };
  *
  * // ConcreteInterface.cpp
- * REGISTER_IN_FACTORY_STATIC(ConcreteInterface, InterfaceFactory, int, int)
+ * REGISTER_IN_FACTORY_STATIC(InterfaceFactory, Concrete, int, int)
  *
  * // logic.cpp
  * auto concrete = InterfaceFactory::create("concrete", 2, 3);
