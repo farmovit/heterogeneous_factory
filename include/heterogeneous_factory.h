@@ -30,7 +30,7 @@ public:
      * @param args... parameters passed to an object's ctor
      * @details creates an object by it's register name with arguments
      * @returns std::unique_ptr<BasePtrT> if object successfully constructed, nullptr otherwise
-     * @throws std::bad_alloc if failed to construct object
+     * @throws std::bad_alloc if fails to construct object
      * @example
      * auto object = InterfaceFactory::create("concreteIface", 1, 2);
      */

@@ -27,16 +27,19 @@ class StaticTypeRegistrator {};
 } // namespace impl_pattern
 
 #define IMPL_REGISTER_IN_FACTORY_STATIC( FactoryType, RegistredType, ... ) \
-template<> class impl_pattern::StaticTypeRegistrator<RegistredType> { \
-    static_assert(impl_pattern::has_static_member_function_factoryRegistrationName_v<RegistredType>, \
-        "Registred type must have 'static std::string factoryRegistrationName()' class member"); \
+template<> \
+class impl_pattern::StaticTypeRegistrator<RegistredType> { \
+static_assert(impl_pattern::has_static_member_function_factoryRegistrationName_v<RegistredType>, \
+    "Registred type must have 'static std::string factoryRegistrationName()' class member"); \
 private: \
     StaticTypeRegistrator() noexcept { \
         try { \
-            FactoryType::registerType<RegistredType, ## __VA_ARGS__>(RegistredType::factoryRegistrationName()); \
+            FactoryType::registerType<RegistredType, ## __VA_ARGS__>( \
+                RegistredType::factoryRegistrationName()); \
         } \
         catch (const std::exception&) {} \
     } \
     static impl_pattern::StaticTypeRegistrator<RegistredType> instance; \
 }; \
-impl_pattern::StaticTypeRegistrator<RegistredType> impl_pattern::StaticTypeRegistrator<RegistredType>::instance;
+impl_pattern::StaticTypeRegistrator<RegistredType> \
+    impl_pattern::StaticTypeRegistrator<RegistredType>::instance;

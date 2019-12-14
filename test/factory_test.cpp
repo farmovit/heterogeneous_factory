@@ -61,20 +61,10 @@ REGISTER_IN_FACTORY_STATIC(InterfaceFactory, Concrete)
 REGISTER_IN_FACTORY_STATIC(InterfaceFactory, SecondConcrete, int, int)
 REGISTER_IN_FACTORY_STATIC(InterfaceFactory, ThirdConcrete)
 REGISTER_IN_FACTORY_STATIC(InterfaceFactory, SamefactoryRegistrationName)
-
 #if TEST_ASSERTIONS
 // Execution fails with assertion in debug mode
 REGISTER_IN_FACTORY_STATIC(InterfaceFactory, SamefactoryRegistrationName2)
 #endif
-
-class SingletonInterfaceFactory : public HGSFactory<Interface, int, int>
-{
-public:
-    static SingletonInterfaceFactory& instance() {
-        static SingletonInterfaceFactory factory;
-        return factory;
-    }
-};
 
 TEST(FactoryTest, StaticRegistrationTest)
 {
@@ -97,20 +87,29 @@ TEST(FactoryTest, StaticRegistrationTest)
     EXPECT_THAT(thirdConcrete->getVal(), Eq(10));
 }
 
-TEST(FactoryTest, SingletonFactoryTest)
+class InterfaceInternalRegistredFactory : public HGSFactory<Interface>
 {
-    SingletonInterfaceFactory::registerType<Concrete>(Concrete::factoryRegistrationName());
+public:
+    static void register_types()
+    {
+        registerType<Concrete, int>(Concrete::factoryRegistrationName());
 
-    // We are not protected from double registring of the same type but there is an assertion
-    // SingletonInterfaceFactory::registerType<Concrete>(Concrete::factoryRegistrationName());
+        // We are not protected from double registration of the same type in compile time but there is an assertion
+        // registerType<Concrete, int>(Concrete::factoryRegistrationName());
 
-    SingletonInterfaceFactory::registerType<SecondConcrete, int, int>(SecondConcrete::factoryRegistrationName());
-    SingletonInterfaceFactory::registerType<ThirdConcrete>(ThirdConcrete::factoryRegistrationName());
-    auto concrete = InterfaceFactory::create(Concrete::factoryRegistrationName(), 0);
+        registerType<SecondConcrete, int, int>(SecondConcrete::factoryRegistrationName());
+        registerType<ThirdConcrete>(ThirdConcrete::factoryRegistrationName());
+    }
+};
+
+TEST(FactoryTest, InternalRegistrationTest)
+{
+    InterfaceInternalRegistredFactory::register_types();
+    auto concrete = InterfaceInternalRegistredFactory::create(Concrete::factoryRegistrationName(), 20);
     ASSERT_THAT(concrete, NotNull());
-    auto secondConcrete = InterfaceFactory::create(SecondConcrete::factoryRegistrationName(), 1, 1);
+    auto secondConcrete = InterfaceInternalRegistredFactory::create(SecondConcrete::factoryRegistrationName(), 1, 1);
     ASSERT_THAT(secondConcrete, NotNull());
-    auto thirdConcrete = InterfaceFactory::create(ThirdConcrete::factoryRegistrationName());
+    auto thirdConcrete = InterfaceInternalRegistredFactory::create(ThirdConcrete::factoryRegistrationName());
     ASSERT_THAT(thirdConcrete, NotNull());
 }
 

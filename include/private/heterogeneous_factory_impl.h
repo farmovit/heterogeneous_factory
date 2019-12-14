@@ -50,16 +50,16 @@ private:
         static_assert(std::is_base_of_v<BaseT, T>, "Type must be derived from BaseT");
         static_assert(std::is_constructible_v<T, Args...> || std::is_constructible_v<T, DefaultCreationArgsT...>,
                       "Type must be constructible from Args... or from DefaultCreationArgsT...");
+        using CreatorTraitT = std::function<BasePtrT(Args...)>;
         try
         {
             std::string name{factoryRegistrationName};
-            if (auto iter = traitsMap().find(name);
-                    iter != traitsMap().end())
+            if (auto it = traitsMap().find(name); it != traitsMap().end())
             {
-                assert(((void)"You have the same names of register types or you are trying to register the same type twice!", false));
+                assert(((void)"You have the same registration name for some types "
+                              "or you are trying to register the same type twice!", false));
                 return;
             }
-            using CreatorTraitT = std::function<BasePtrT(Args...)>;
             if constexpr (std::is_constructible_v<T, DefaultCreationArgsT...>)
             {
                 DefaultCreatorTraitT defaultTrait = [](DefaultCreationArgsT... args) { return std::make_unique<T>(args...); };
