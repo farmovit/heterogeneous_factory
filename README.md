@@ -45,8 +45,8 @@ auto concrete = InterfaceFactory::create("concrete", 2, 3);
 auto concreteSecond = InterfaceFactory::create("concrete_second", 10);
 ```
 
-Please see the [test](https://github.com/farmovit/heterogeneous_factory/blob/master/test/factory_test.cpp) to get more information.
-Also documentations are available in source files.
+Please see the [test](https://github.com/farmovit/heterogeneous_factory/blob/master/test/factory_test.cpp) to get more examples.
+Also documentation are available in source files.
 
 ### Requirements
 ```

@@ -5,21 +5,21 @@
 /**
  * @macro registers type in factory statically
  * @tparam FactoryType factory where RegistredType should be registred
- * @tparam RegistredType type should be registred
+ * @tparam RegistredType type that should be registred
  * @tparam ... Argument types for RegistredType construction @sa HGSFactory::registerType
- * @requires static member function 'std::string factoryRegistrationName()'
- * @attention MUST BE used only in cpp file in global namespace otherwise no registration will occured
+ * @requires static member function 'KeyT factoryRegistrationKey()'
+ * @attention MUST BE used only in cpp file in global namespace otherwise no registration will be occured
  * @example
  * // Interface.h
  * struct Interface { ... };
 
  * // InterfaceFactory.h
- * using InterfaceFactory = HGSFactory<Interface>;
+ * using InterfaceFactory = HGSFactory<Interface, std::string>;
 
  * // ConcreteInterface.h
  * struct Concrete : public Interface {
  *      Concrete(int, int) {}
- *      static std::string factoryRegistrationName() { return "concrete"; }
+ *      static std::string factoryRegistrationKey() { return "concrete"; }
  * };
  *
  * // ConcreteInterface.cpp

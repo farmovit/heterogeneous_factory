@@ -8,109 +8,133 @@ using namespace ::testing;
 
 #define TEST_ASSERTIONS 0
 
-struct Interface
+struct InterfaceString
 {
-    virtual ~Interface() = default;
+    virtual ~InterfaceString() = default;
     virtual int getVal() const noexcept = 0;
 };
 
-struct Concrete : Interface
+struct ConcreteString : InterfaceString
 {
-    Concrete() = default;
-    Concrete(int val) : m_Val(val) {}
-    static std::string factoryRegistrationName() { return "concrete"; }
+    ConcreteString() = default;
+    ConcreteString(int val) : m_Val(val) {}
+    static std::string factoryRegistrationKey() { return "concrete"; }
     int getVal() const noexcept override { return m_Val; }
 
 private:
     int m_Val{43};
 };
 
-struct SecondConcrete : Interface
+struct SecondConcreteString : InterfaceString
 {
-    SecondConcrete(int a, int) : m_Val(a) {}
-    static std::string factoryRegistrationName() { return "secondConcrete"; }
+    SecondConcreteString(int a, int) : m_Val(a) {}
+    static std::string factoryRegistrationKey() { return "secondConcrete"; }
     int getVal() const noexcept override { return m_Val; }
 
 private:
     int m_Val{0};
 };
 
-struct ThirdConcrete : SecondConcrete
+struct ThirdConcreteString : SecondConcreteString
 {
-    ThirdConcrete() : SecondConcrete(10, 20) {}
-    static std::string factoryRegistrationName() { return "thirdConcrete"; }
+    ThirdConcreteString() : SecondConcreteString(10, 20) {}
+    static std::string factoryRegistrationKey() { return "thirdConcrete"; }
 };
 
-struct SamefactoryRegistrationName : Interface
+struct SamefactoryRegistrationNameString : InterfaceString
 {
-    static std::string factoryRegistrationName() { return "samefactoryRegistrationName"; }
+    static std::string factoryRegistrationKey() { return "samefactoryRegistrationName"; }
     int getVal() const noexcept override { return 2; }
 };
 
 #if TEST_ASSERTIONS
-struct SamefactoryRegistrationName2 : Interface
+struct SamefactoryRegistrationNameString2 : InterfaceString
 {
     static std::string factoryRegistrationName() { return "samefactoryRegistrationName"; }
     int getVal() const noexcept override { return 3; }
 };
 #endif
 
-using InterfaceFactory = HGSFactory<Interface, int>;
+using InterfaceStringFactory = HGSFactory<InterfaceString, std::string, int>;
 
-REGISTER_IN_FACTORY_STATIC(InterfaceFactory, Concrete)
-REGISTER_IN_FACTORY_STATIC(InterfaceFactory, SecondConcrete, int, int)
-REGISTER_IN_FACTORY_STATIC(InterfaceFactory, ThirdConcrete)
-REGISTER_IN_FACTORY_STATIC(InterfaceFactory, SamefactoryRegistrationName)
+REGISTER_IN_FACTORY_STATIC(InterfaceStringFactory, ConcreteString);
+REGISTER_IN_FACTORY_STATIC(InterfaceStringFactory, SecondConcreteString, int, int);
+REGISTER_IN_FACTORY_STATIC(InterfaceStringFactory, ThirdConcreteString);
+REGISTER_IN_FACTORY_STATIC(InterfaceStringFactory, SamefactoryRegistrationNameString);
 #if TEST_ASSERTIONS
 // Execution fails with assertion in debug mode
-REGISTER_IN_FACTORY_STATIC(InterfaceFactory, SamefactoryRegistrationName2)
+REGISTER_IN_FACTORY_STATIC(InterfaceFactory, SamefactoryRegistrationNameString2)
 #endif
 
 TEST(FactoryTest, StaticRegistrationTest)
 {
-    auto concrete = InterfaceFactory::create(Concrete::factoryRegistrationName());
+    auto concrete = InterfaceStringFactory::create(ConcreteString::factoryRegistrationKey());
     ASSERT_THAT(concrete, NotNull());
     EXPECT_THAT(concrete->getVal(), Eq(43));
     int creationVal = 2;
-    concrete = InterfaceFactory::create(Concrete::factoryRegistrationName(), creationVal);
+    concrete = InterfaceStringFactory::create(ConcreteString::factoryRegistrationKey(), creationVal);
     ASSERT_THAT(concrete, NotNull());
     EXPECT_THAT(concrete->getVal(), Eq(creationVal));
-    concrete = InterfaceFactory::create(Concrete::factoryRegistrationName(), 2, 4, 6);
+    concrete = InterfaceStringFactory::create(ConcreteString::factoryRegistrationKey(), 2, 4, 6);
     EXPECT_THAT(concrete, IsNull());
-    auto secondConcrete = InterfaceFactory::create(SecondConcrete::factoryRegistrationName());
+    auto secondConcrete = InterfaceStringFactory::create(SecondConcreteString::factoryRegistrationKey());
     EXPECT_THAT(secondConcrete, IsNull());
-    secondConcrete = InterfaceFactory::create(SecondConcrete::factoryRegistrationName(), creationVal, 1);
+    secondConcrete = InterfaceStringFactory::create(SecondConcreteString::factoryRegistrationKey(), creationVal, 1);
     ASSERT_THAT(secondConcrete, NotNull());
     EXPECT_THAT(secondConcrete->getVal(), Eq(creationVal));
-    auto thirdConcrete = InterfaceFactory::create(ThirdConcrete::factoryRegistrationName());
+    auto thirdConcrete = InterfaceStringFactory::create(ThirdConcreteString::factoryRegistrationKey());
     ASSERT_THAT(thirdConcrete, NotNull());
     EXPECT_THAT(thirdConcrete->getVal(), Eq(10));
 }
 
-class InterfaceInternalRegistredFactory : public HGSFactory<Interface>
+struct InterfaceInt
+{
+    virtual ~InterfaceInt() = default;
+    virtual int getVal() const noexcept = 0;
+};
+
+struct ConcreteInt : InterfaceInt
+{
+    ConcreteInt() = default;
+    ConcreteInt(int val) : m_Val(val) {}
+    static int factoryRegistrationKey() { return 0; }
+    int getVal() const noexcept override { return m_Val; }
+
+private:
+    int m_Val{43};
+};
+
+struct SecondConcreteInt : InterfaceInt
+{
+    SecondConcreteInt(int a, int) : m_Val(a) {}
+    static int factoryRegistrationKey() { return 1; }
+    int getVal() const noexcept override { return m_Val; }
+
+private:
+    int m_Val{0};
+};
+
+class InterfaceIntInternalRegistredFactory : public HGSFactory<InterfaceInt, int>
 {
 public:
     static void register_types()
     {
-        registerType<Concrete, int>(Concrete::factoryRegistrationName());
+        registerType<ConcreteInt, int>();
 
         // We are not protected from double registration of the same type in compile time but there is an assertion
         // registerType<Concrete, int>(Concrete::factoryRegistrationName());
 
-        registerType<SecondConcrete, int, int>(SecondConcrete::factoryRegistrationName());
-        registerType<ThirdConcrete>(ThirdConcrete::factoryRegistrationName());
+        registerType<SecondConcreteInt, int, int>();
     }
 };
 
 TEST(FactoryTest, InternalRegistrationTest)
 {
-    InterfaceInternalRegistredFactory::register_types();
-    auto concrete = InterfaceInternalRegistredFactory::create(Concrete::factoryRegistrationName(), 20);
+    InterfaceIntInternalRegistredFactory::register_types();
+    auto concrete = InterfaceIntInternalRegistredFactory::create(ConcreteInt::factoryRegistrationKey(), 20);
     ASSERT_THAT(concrete, NotNull());
-    auto secondConcrete = InterfaceInternalRegistredFactory::create(SecondConcrete::factoryRegistrationName(), 1, 1);
+    auto secondConcrete = InterfaceIntInternalRegistredFactory::create(SecondConcreteInt::factoryRegistrationKey(), 1, 1);
     ASSERT_THAT(secondConcrete, NotNull());
-    auto thirdConcrete = InterfaceInternalRegistredFactory::create(ThirdConcrete::factoryRegistrationName());
-    ASSERT_THAT(thirdConcrete, NotNull());
 }
 
 int main(int argc, char **argv)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "traits.h"
 #include <memory>
 #include <map>
 #include <functional>
@@ -8,28 +9,28 @@
 
 namespace pattern
 {
-template<typename T, typename... Args>
+template<typename TForward, typename UForward, typename... ArgsForward>
 class HGSFactory;
 } // namespace pattern
 
 namespace impl_pattern
 {
 
-template<typename BaseT, typename... DefaultCreationArgsT>
+template<typename BaseT, typename KeyT, typename... DefaultCreationArgsT>
 class ImplHGSFactory final
 {
+    static_assert(traits::is_std_hashable_v<KeyT>, "Type 'KeyT' must have std::hash<KeyT> specialization");
 private:
     using BasePtrT = std::unique_ptr<BaseT>;
     using DefaultCreatorTraitT = std::function<BasePtrT(DefaultCreationArgsT...)>;
 
     template<typename... Args>
-    static BasePtrT create(std::string_view factoryRegistrationName, Args... args)
+    static BasePtrT create(const KeyT& factoryRegistrationKey, Args... args)
     {
         using CreatorTraitT = std::function<BasePtrT(Args...)>;
         try
         {
-            std::string name{factoryRegistrationName};
-            auto range = traitsMap().equal_range(name);
+            auto range = traitsMap().equal_range(factoryRegistrationKey);
             for (auto it = range.first; it != range.second; ++it)
             {
                 try
@@ -43,32 +44,42 @@ private:
         return nullptr;
     }
 
-    template<class T, typename... Args>
-    static void registerType(std::string_view factoryRegistrationName) noexcept
+    template<class RegistredT, typename... Args>
+    static void registerType() noexcept
     {
-        static_assert(!std::is_abstract_v<T>, "Type must not be abstract");
-        static_assert(std::is_base_of_v<BaseT, T>, "Type must be derived from BaseT");
-        static_assert(std::is_constructible_v<T, Args...> || std::is_constructible_v<T, DefaultCreationArgsT...>,
-                      "Type must be constructible from Args... or from DefaultCreationArgsT...");
+        static_assert(!std::is_abstract_v<RegistredT>, "Type 'RegistredT' must not be abstract");
+        static_assert(std::is_base_of_v<BaseT, RegistredT>, "Type 'RegistredT' must inherit from 'BaseT'");
+        static_assert(std::is_constructible_v<RegistredT, Args...>
+                      || std::is_constructible_v<RegistredT, DefaultCreationArgsT...>,
+                      "Type 'RegistredT' must be constructible from 'Args...' or from 'DefaultCreationArgsT...'");
+        static_assert(traits::has_static_member_function_factoryRegistrationKey_v<RegistredT, KeyT>,
+                      "Type 'RegistredT' must have 'static KeyT factoryRegistrationKey()' member function");
         using CreatorTraitT = std::function<BasePtrT(Args...)>;
         try
         {
-            std::string name{factoryRegistrationName};
-            if (auto it = traitsMap().find(name); it != traitsMap().end())
+            const auto registrationKey = RegistredT::factoryRegistrationKey();
+            if (auto it = traitsMap().find(registrationKey); it != traitsMap().end())
             {
-                assert(((void)"You have the same registration name for some types "
-                              "or you are trying to register the same type twice!", false));
+                assert(((void)"You have the same registration key for several types "
+                              "or you are trying to register the same type twice", false));
                 return;
             }
-            if constexpr (std::is_constructible_v<T, DefaultCreationArgsT...>)
+            if constexpr (std::is_constructible_v<RegistredT, DefaultCreationArgsT...>)
             {
-                DefaultCreatorTraitT defaultTrait = [](DefaultCreationArgsT... args) { return std::make_unique<T>(args...); };
-                traitsMap().emplace(name, defaultTrait);
+                DefaultCreatorTraitT defaultTrait = [](DefaultCreationArgsT... args)
+                {
+                    return std::make_unique<RegistredT>(args...);
+                };
+                traitsMap().emplace(registrationKey, defaultTrait);
             }
-            if constexpr (!std::is_same_v<CreatorTraitT, DefaultCreatorTraitT> && std::is_constructible_v<T, Args...>)
+            if constexpr (!std::is_same_v<CreatorTraitT, DefaultCreatorTraitT>
+                          && std::is_constructible_v<RegistredT, Args...>)
             {
-                CreatorTraitT trait = [](Args... args) { return std::make_unique<T>(args...); };
-                traitsMap().emplace(name, trait);
+                CreatorTraitT trait = [](Args... args)
+                {
+                    return std::make_unique<RegistredT>(args...);
+                };
+                traitsMap().emplace(registrationKey, trait);
             }
         } catch (const std::exception&) {}
     }
@@ -80,13 +91,13 @@ private:
     ImplHGSFactory& operator=(ImplHGSFactory&&) = delete;
 
 private:
-    using TraitsMap = std::unordered_multimap<std::string, std::any>;
+    using TraitsMap = std::unordered_multimap<KeyT, std::any>;
     static TraitsMap &traitsMap()
     {
         static TraitsMap map;
         return map;
     }
-    template<typename T, typename... Args>
+    template<typename TForward, typename KeyTForward, typename... ArgsForward>
     friend class pattern::HGSFactory;
 };
 } // namespace impl_pattern
