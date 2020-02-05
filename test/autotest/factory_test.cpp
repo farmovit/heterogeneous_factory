@@ -1,7 +1,11 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "heterogeneous_factory.h"
+#include "heterogeneous_static_factory.h"
 #include "factory_static_registrator.h"
+#include "TestInterfaceFactory.h"
+#include "TestObject.h"
+#include "SecondTestObject.h"
 
 using namespace pattern;
 using namespace ::testing;
@@ -55,12 +59,12 @@ struct SamefactoryRegistrationNameString2 : InterfaceString
 };
 #endif
 
-using InterfaceStringFactory = HGSFactory<InterfaceString, std::string, int>;
+using InterfaceStringFactory = StaticHGSFactory<InterfaceString, std::string, int>;
 
-REGISTER_IN_FACTORY_STATIC(InterfaceStringFactory, ConcreteString);
-REGISTER_IN_FACTORY_STATIC(InterfaceStringFactory, SecondConcreteString, int, int);
-REGISTER_IN_FACTORY_STATIC(InterfaceStringFactory, ThirdConcreteString);
-REGISTER_IN_FACTORY_STATIC(InterfaceStringFactory, SamefactoryRegistrationNameString);
+REGISTER_IN_STATIC_FACTORY(InterfaceStringFactory, ConcreteString);
+REGISTER_IN_STATIC_FACTORY(InterfaceStringFactory, SecondConcreteString, int, int);
+REGISTER_IN_STATIC_FACTORY(InterfaceStringFactory, ThirdConcreteString);
+REGISTER_IN_STATIC_FACTORY(InterfaceStringFactory, SamefactoryRegistrationNameString);
 #if TEST_ASSERTIONS
 // Execution fails with assertion in debug mode
 REGISTER_IN_FACTORY_STATIC(InterfaceFactory, SamefactoryRegistrationNameString2)
@@ -114,7 +118,7 @@ private:
     int m_Val{0};
 };
 
-class InterfaceIntInternalRegistredFactory : public HGSFactory<InterfaceInt, int>
+class InterfaceIntInternalRegistredFactory : public StaticHGSFactory<InterfaceInt, int>
 {
 public:
     static void register_types()
@@ -135,6 +139,14 @@ TEST(FactoryTest, InternalRegistrationTest)
     ASSERT_THAT(concrete, NotNull());
     auto secondConcrete = InterfaceIntInternalRegistredFactory::create(SecondConcreteInt::factoryRegistrationKey(), 1, 1);
     ASSERT_THAT(secondConcrete, NotNull());
+}
+
+TEST(FactoryTest, SharedLibraryRegistrationTest)
+{
+    auto testObject = TestInterfaceFactory::instance().create(TestObject::factoryRegistrationKey(), 20, 30);
+    EXPECT_THAT(testObject, NotNull());
+    auto secondTestObject = TestInterfaceFactory::instance().create(SecondTestObject::factoryRegistrationKey(), 40);
+    EXPECT_THAT(secondTestObject, NotNull());
 }
 
 int main(int argc, char **argv)

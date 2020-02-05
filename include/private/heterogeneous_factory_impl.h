@@ -16,21 +16,28 @@ class HGSFactory;
 namespace impl_pattern
 {
 
+template<typename TForward, typename UForward, typename... ArgsForward>
+class StaticHGSFactory;
+
 template<typename BaseT, typename KeyT, typename... DefaultCreationArgsT>
 class ImplHGSFactory final
 {
     static_assert(traits::is_std_hashable_v<KeyT>, "Type 'KeyT' must have std::hash<KeyT> specialization");
-private:
+
+protected:
     using BasePtrT = std::unique_ptr<BaseT>;
     using DefaultCreatorTraitT = std::function<BasePtrT(DefaultCreationArgsT...)>;
 
+private:
+    ImplHGSFactory() = default;
+
     template<typename... Args>
-    static BasePtrT create(const KeyT& factoryRegistrationKey, Args... args)
+    BasePtrT create(const KeyT& factoryRegistrationKey, Args... args) noexcept
     {
         using CreatorTraitT = std::function<BasePtrT(Args...)>;
         try
         {
-            auto range = traitsMap().equal_range(factoryRegistrationKey);
+            auto range = mTraitsMap.equal_range(factoryRegistrationKey);
             for (auto it = range.first; it != range.second; ++it)
             {
                 try
@@ -45,7 +52,7 @@ private:
     }
 
     template<class RegistredT, typename... Args>
-    static void registerType() noexcept
+    void registerType() noexcept
     {
         static_assert(!std::is_abstract_v<RegistredT>, "Type 'RegistredT' must not be abstract");
         static_assert(std::is_base_of_v<BaseT, RegistredT>, "Type 'RegistredT' must inherit from 'BaseT'");
@@ -58,7 +65,7 @@ private:
         try
         {
             const auto registrationKey = RegistredT::factoryRegistrationKey();
-            if (auto it = traitsMap().find(registrationKey); it != traitsMap().end())
+            if (auto it = mTraitsMap.find(registrationKey); it != mTraitsMap.end())
             {
                 assert(((void)"You have the same registration key for several types "
                               "or you are trying to register the same type twice", false));
@@ -70,7 +77,7 @@ private:
                 {
                     return std::make_unique<RegistredT>(args...);
                 };
-                traitsMap().emplace(registrationKey, defaultTrait);
+                mTraitsMap.emplace(registrationKey, defaultTrait);
             }
             if constexpr (!std::is_same_v<CreatorTraitT, DefaultCreatorTraitT>
                           && std::is_constructible_v<RegistredT, Args...>)
@@ -79,12 +86,11 @@ private:
                 {
                     return std::make_unique<RegistredT>(args...);
                 };
-                traitsMap().emplace(registrationKey, trait);
+                mTraitsMap.emplace(registrationKey, trait);
             }
         } catch (const std::exception&) {}
     }
 
-    ImplHGSFactory() = delete;
     ImplHGSFactory(const ImplHGSFactory&) = delete;
     ImplHGSFactory& operator=(const ImplHGSFactory&) = delete;
     ImplHGSFactory(ImplHGSFactory&&) = delete;
@@ -92,12 +98,12 @@ private:
 
 private:
     using TraitsMap = std::unordered_multimap<KeyT, std::any>;
-    static TraitsMap &traitsMap()
-    {
-        static TraitsMap map;
-        return map;
-    }
+    TraitsMap mTraitsMap;
+
+private:
     template<typename TForward, typename KeyTForward, typename... ArgsForward>
     friend class pattern::HGSFactory;
+    template<typename TForward, typename KeyTForward, typename... ArgsForward>
+    friend class StaticHGSFactoryImpl;
 };
 } // namespace impl_pattern
