@@ -40,9 +40,9 @@ public:
      * auto object = factory.create("concreteName", 1, 2);
      */
     template<typename... CreationArgsT>
-    [[ nodiscard ]] BasePtrT create(const KeyT& factoryRegistrationKey, CreationArgsT... args)
+    [[ nodiscard ]] BasePtrT create(KeyT factoryRegistrationKey, CreationArgsT... args) const noexcept
     {
-        return impl.create(factoryRegistrationKey, args...);
+        return impl.create(factoryRegistrationKey, std::forward<CreationArgsT>(args)...);
     }
 
     /**
@@ -51,7 +51,7 @@ public:
      * @details register type in factory.
      * Produces assertion if type with factoryRegistrationKey is already registred
      * @example
-     * factory.registerType<ConcreteIface, int>("concreteIface");
+     * factory.registerType<ConcreteIface, int>();
      */
     template<class T, typename... RegisterArgsT>
     void registerType() noexcept
@@ -59,13 +59,19 @@ public:
         impl.template registerType<T, RegisterArgsT...>();
     }
 
-public:
-    HGSFactory() = default;
-    virtual ~HGSFactory() = default;
-    HGSFactory(const HGSFactory&) = default;
-    HGSFactory& operator=(const HGSFactory&) = default;
-    HGSFactory(HGSFactory&&) = default;
-    HGSFactory& operator=(HGSFactory&&) = default;
+    /**
+     * @tparam T type to register in factory
+     * @tparam RegisterArgsT argument types for registred types construction
+     * @param factoryRegistrationKey key of registred type
+     * @details register type in factory
+     * @example
+     * factory.registerType<ConcreteIface, int>("concreteIface");
+     */
+    template<class T, typename... RegisterArgsT>
+    void registerType(KeyT factoryRegistrationKey) noexcept
+    {
+        impl.template registerType<T, RegisterArgsT...>(factoryRegistrationKey);
+    }
 
 private:
     ImplFactory impl;

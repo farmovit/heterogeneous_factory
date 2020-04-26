@@ -111,33 +111,33 @@ private:
 struct SecondConcreteInt : InterfaceInt
 {
     SecondConcreteInt(int a, int) : m_Val(a) {}
-    static int factoryRegistrationKey() { return 1; }
     int getVal() const noexcept override { return m_Val; }
 
 private:
     int m_Val{0};
 };
 
-class InterfaceIntInternalRegistredFactory : public StaticHGSFactory<InterfaceInt, int>
+class InterfaceIntInternalRegistredFactory : public HGSFactory<InterfaceInt, int>
 {
 public:
-    static void register_types()
+    void registerTypes() noexcept
     {
         registerType<ConcreteInt, int>();
 
         // We are not protected from double registration of the same type in compile time but there is an assertion
         // registerType<Concrete, int>(Concrete::factoryRegistrationName());
 
-        registerType<SecondConcreteInt, int, int>();
+        registerType<SecondConcreteInt, int, int>(1);
     }
 };
 
 TEST(FactoryTest, InternalRegistrationTest)
 {
-    InterfaceIntInternalRegistredFactory::register_types();
-    auto concrete = InterfaceIntInternalRegistredFactory::create(ConcreteInt::factoryRegistrationKey(), 20);
+    InterfaceIntInternalRegistredFactory factory;
+    factory.registerTypes();
+    auto concrete = factory.create(ConcreteInt::factoryRegistrationKey(), 20);
     ASSERT_THAT(concrete, NotNull());
-    auto secondConcrete = InterfaceIntInternalRegistredFactory::create(SecondConcreteInt::factoryRegistrationKey(), 1, 1);
+    auto secondConcrete = factory.create(1, 1, 1);
     ASSERT_THAT(secondConcrete, NotNull());
 }
 

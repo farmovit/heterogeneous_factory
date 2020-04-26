@@ -21,7 +21,7 @@ private:
     template<typename... CreationArgsT>
     static BasePtrT create(const KeyT& factoryRegistrationKey, CreationArgsT... args) noexcept
     {
-        return getFactory().create(factoryRegistrationKey, args...);
+        return getFactory().create(factoryRegistrationKey, std::forward<CreationArgsT>(args)...);
     }
 
     template<class T, typename... RegisterArgsT>
@@ -30,6 +30,7 @@ private:
         getFactory().template registerType<T, RegisterArgsT...>();
     }
 
+public:
     StaticHGSFactoryImpl() = delete;
     StaticHGSFactoryImpl(const StaticHGSFactoryImpl&) = delete;
     StaticHGSFactoryImpl& operator=(const StaticHGSFactoryImpl&) = delete;

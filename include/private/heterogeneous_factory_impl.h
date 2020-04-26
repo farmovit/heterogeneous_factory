@@ -29,20 +29,18 @@ protected:
     using DefaultCreatorTraitT = std::function<BasePtrT(DefaultCreationArgsT...)>;
 
 private:
-    ImplHGSFactory() = default;
-
     template<typename... Args>
-    [[ nodiscard ]] BasePtrT create(const KeyT& factoryRegistrationKey, Args... args) noexcept
+    [[ nodiscard ]] BasePtrT create(KeyT factoryRegistrationKey, Args... args) const noexcept
     {
         using CreatorTraitT = std::function<BasePtrT(Args...)>;
         try
         {
-            auto range = mTraitsMap.equal_range(factoryRegistrationKey);
+            const auto range = mTraitsMap.equal_range(factoryRegistrationKey);
             for (auto it = range.first; it != range.second; ++it)
             {
                 try
                 {
-                    auto creator = std::any_cast<CreatorTraitT>(it->second);
+                    const auto creator = std::any_cast<CreatorTraitT>(it->second);
                     return creator(std::forward<Args>(args)...);
                 }
                 catch (const std::bad_any_cast&) {}
@@ -52,20 +50,17 @@ private:
     }
 
     template<class RegistredT, typename... Args>
-    void registerType() noexcept
+    void registerType(KeyT factoryRegistrationKey) noexcept
     {
         static_assert(!std::is_abstract_v<RegistredT>, "Type 'RegistredT' must not be abstract");
         static_assert(std::is_base_of_v<BaseT, RegistredT>, "Type 'RegistredT' must inherit from 'BaseT'");
         static_assert(std::is_constructible_v<RegistredT, Args...>
                       || std::is_constructible_v<RegistredT, DefaultCreationArgsT...>,
                       "Type 'RegistredT' must be constructible from 'Args...' or from 'DefaultCreationArgsT...'");
-        static_assert(traits::has_static_member_function_factoryRegistrationKey_v<RegistredT, KeyT>,
-                      "Type 'RegistredT' must have 'static KeyT factoryRegistrationKey()' member function");
         using CreatorTraitT = std::function<BasePtrT(Args...)>;
         try
         {
-            const auto registrationKey = RegistredT::factoryRegistrationKey();
-            if (auto it = mTraitsMap.find(registrationKey); it != mTraitsMap.end())
+            if (const auto it = mTraitsMap.find(factoryRegistrationKey); it != mTraitsMap.end())
             {
                 assert(((void)"You have the same registration key for several types "
                               "or you are trying to register the same type twice", false));
@@ -73,24 +68,34 @@ private:
             }
             if constexpr (std::is_constructible_v<RegistredT, DefaultCreationArgsT...>)
             {
-                DefaultCreatorTraitT defaultTrait = [](DefaultCreationArgsT... args)
+                const DefaultCreatorTraitT defaultTrait = [](DefaultCreationArgsT... args)
                 {
-                    return std::make_unique<RegistredT>(args...);
+                    return std::make_unique<RegistredT>(std::forward<DefaultCreationArgsT>(args)...);
                 };
-                mTraitsMap.emplace(registrationKey, defaultTrait);
+                mTraitsMap.emplace(factoryRegistrationKey, defaultTrait);
             }
             if constexpr (!std::is_same_v<CreatorTraitT, DefaultCreatorTraitT>
                           && std::is_constructible_v<RegistredT, Args...>)
             {
-                CreatorTraitT trait = [](Args... args)
+                const CreatorTraitT trait = [](Args... args)
                 {
-                    return std::make_unique<RegistredT>(args...);
+                    return std::make_unique<RegistredT>(std::forward<Args>(args)...);
                 };
-                mTraitsMap.emplace(registrationKey, trait);
+                mTraitsMap.emplace(factoryRegistrationKey, trait);
             }
         } catch (const std::exception&) {}
     }
 
+    template<class RegistredT, typename... Args>
+    void registerType() noexcept
+    {
+        static_assert(traits::has_static_member_function_factoryRegistrationKey_v<RegistredT, KeyT>,
+                      "Type 'RegistredT' must have 'static KeyT factoryRegistrationKey()' member function");
+        registerType<RegistredT, Args...>(RegistredT::factoryRegistrationKey());
+    }
+
+private:
+    ImplHGSFactory() = default;
     ImplHGSFactory(const ImplHGSFactory&) = default;
     ImplHGSFactory& operator=(const ImplHGSFactory&) = default;
     ImplHGSFactory(ImplHGSFactory&&) = default;

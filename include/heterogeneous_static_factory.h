@@ -37,12 +37,11 @@ public:
      * @param args... parameters passed to an object's ctor
      * @details creates an object by its register name with arguments
      * @returns std::unique_ptr<BasePtrT> if object is successfully constructed, nullptr otherwise
-     * @throws std::bad_alloc if fails to construct object
      * @example
      * auto object = InterfaceFactory::create("concreteName", 1, 2);
      */
     template<typename... CreationArgsT>
-    static BasePtrT create(const KeyT& factoryRegistrationKey, CreationArgsT... args)
+    static BasePtrT create(KeyT factoryRegistrationKey, CreationArgsT... args) noexcept
     {
         return ImplStaticFactory::create(factoryRegistrationKey, args...);
     }
@@ -53,7 +52,7 @@ public:
      * @details register type in factory.
      * Produces assertion if type with factoryRegistrationKey is already registred
      * @example
-     * InterfaceFactory::registerType<ConcreteIface, int>("concreteIface");
+     * InterfaceFactory::registerType<ConcreteIface, int>();
      */
     template<class T, typename... RegisterArgsT>
     static void registerType() noexcept
@@ -61,15 +60,13 @@ public:
         ImplStaticFactory::template registerType<T, RegisterArgsT...>();
     }
 
+public:
     StaticHGSFactory() = delete;
     virtual ~StaticHGSFactory() = default;
     StaticHGSFactory(const StaticHGSFactory&) = delete;
     StaticHGSFactory& operator=(const StaticHGSFactory&) = delete;
     StaticHGSFactory(StaticHGSFactory&&) = delete;
     StaticHGSFactory& operator=(StaticHGSFactory&&) = delete;
-
-public:
-    using KeyType = KeyT;
 };
 
 } // namespace pattern
