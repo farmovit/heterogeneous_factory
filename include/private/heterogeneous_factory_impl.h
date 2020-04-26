@@ -32,7 +32,7 @@ private:
     ImplHGSFactory() = default;
 
     template<typename... Args>
-    BasePtrT create(const KeyT& factoryRegistrationKey, Args... args) noexcept
+    [[ nodiscard ]] BasePtrT create(const KeyT& factoryRegistrationKey, Args... args) noexcept
     {
         using CreatorTraitT = std::function<BasePtrT(Args...)>;
         try
@@ -91,10 +91,10 @@ private:
         } catch (const std::exception&) {}
     }
 
-    ImplHGSFactory(const ImplHGSFactory&) = delete;
-    ImplHGSFactory& operator=(const ImplHGSFactory&) = delete;
-    ImplHGSFactory(ImplHGSFactory&&) = delete;
-    ImplHGSFactory& operator=(ImplHGSFactory&&) = delete;
+    ImplHGSFactory(const ImplHGSFactory&) = default;
+    ImplHGSFactory& operator=(const ImplHGSFactory&) = default;
+    ImplHGSFactory(ImplHGSFactory&&) = default;
+    ImplHGSFactory& operator=(ImplHGSFactory&&) = default;
 
 private:
     using TraitsMap = std::unordered_multimap<KeyT, std::any>;

@@ -2,6 +2,7 @@
 
 #include <type_traits>
 #include <functional>
+#include <memory>
 
 namespace impl_pattern
 {
@@ -53,6 +54,25 @@ struct is_base_of_template
 
 template <template <typename...> class Base, typename Derived>
 constexpr bool is_base_of_template_v = is_base_of_template<Base, Derived>::type::value;
+
+template <typename T, typename = std::void_t<>>
+struct is_smart_pointer : std::false_type {};
+
+template <typename T>
+struct is_smart_pointer<T, std::void_t<
+    std::enable_if_t<
+        std::is_same_v<
+            typename std::remove_cv_t<T>, std::shared_ptr<typename T::element_type>
+        >
+        ||
+        std::is_same_v<
+            typename std::remove_cv_t<T>, std::unique_ptr<typename T::element_type>
+        >
+    >
+>> : std::true_type {};
+
+template <typename T>
+constexpr bool is_smart_pointer_v = is_smart_pointer<T>::value;
 
 } // namespace traits
 } // namespace impl_pattern

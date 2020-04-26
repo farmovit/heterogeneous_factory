@@ -40,7 +40,7 @@ public:
      * auto object = factory.create("concreteName", 1, 2);
      */
     template<typename... CreationArgsT>
-    BasePtrT create(const KeyT& factoryRegistrationKey, CreationArgsT... args)
+    [[ nodiscard ]] BasePtrT create(const KeyT& factoryRegistrationKey, CreationArgsT... args)
     {
         return impl.create(factoryRegistrationKey, args...);
     }
@@ -59,12 +59,13 @@ public:
         impl.template registerType<T, RegisterArgsT...>();
     }
 
+public:
     HGSFactory() = default;
     virtual ~HGSFactory() = default;
-    HGSFactory(const HGSFactory&) = delete;
-    HGSFactory& operator=(const HGSFactory&) = delete;
-    HGSFactory(HGSFactory&&) = delete;
-    HGSFactory& operator=(HGSFactory&&) = delete;
+    HGSFactory(const HGSFactory&) = default;
+    HGSFactory& operator=(const HGSFactory&) = default;
+    HGSFactory(HGSFactory&&) = default;
+    HGSFactory& operator=(HGSFactory&&) = default;
 
 private:
     ImplFactory impl;
